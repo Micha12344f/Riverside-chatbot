@@ -24,3 +24,5 @@ env/
 venv/
 *.log
 .DS_Store
+.vscode
+local_assets
