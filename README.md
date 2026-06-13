@@ -1,84 +1,238 @@
 # Riverside Books Chatbot
 
-A small command-line chatbot for the Riverside Books FAQ task. The main submission uses local semantic retrieval over the provided FAQ data, with a lexical fallback so the bot still runs safely if the embedding model is unavailable.
+This repository contains a small but deliberately thoughtful FAQ chatbot for the fictional independent bookshop **Riverside Books**. The core deliverable is a command-line chatbot that answers questions from a fixed FAQ file without relying on a hosted model or an API key.
 
-## Why I used Python
+The project is built around one idea:
 
-The brief mentions a preference for Node and TypeScript, but Python is the stronger tool for this specific job: local semantic search with sentence-transformers.
+- for a tiny, closed set of 20 FAQs, a local semantic retriever is a better default than an LLM
 
-The `sentence-transformers` ecosystem is Python-first. It lets you download a 80 MB model, run embeddings entirely on CPU, and compute cosine similarity with NumPy — no API keys, no Docker GPUs, no ONNX wrappers. The equivalent path in Node would mean heavier dependencies (TensorFlow.js or ONNX Runtime) and more boilerplate for the same result.
+That choice keeps the project:
 
-This repository already had a partial Python scaffold, so rather than burn the time box on a stack migration, I finished the path that was already aligned with the problem domain. The result is a small, self-contained CLI that runs offline, tests cleanly with pytest, and ships in under 200 lines of core code.
+- cheap to run
+- easy to explain
+- easy to test
+- much less likely to hallucinate
 
-## Approach
+The repository also contains notebook-based teaching material and an interactive inspection tool so the matching logic is visible instead of hidden.
 
-The main matcher uses `sentence-transformers/multi-qa-MiniLM-L6-cos-v1` and embeds each FAQ as a combined document:
+## What Is In This Repository
 
-```text
-Question: ...
-Answer: ...
-```
+At a high level, the repository has five main parts:
 
-That lets the retrieval step use the answer text as extra context instead of relying on the question field alone.
+- `main.py`
+  - small command-line entrypoint for the production-style chatbot
+- `src/`
+  - the real Python code: FAQ loading, matching logic, CLI logic, and the live test helper
+- `tests/`
+  - automated checks for matching, CLI flow, fallback behavior, and evaluation cases
+- `src/Jupyter Notebooks/`
+  - notebooks for explanation and interactive exploration
+- `website/`
+  - a website scaffold that is present in the repository but not used by the main solution
 
-I also add a lightweight question-fit reranking bonus after semantic retrieval. This helps short paraphrases like "where's the shop?" favour the FAQ whose canonical question best matches the user's intent, while still benefiting from answer-text context.
+## Quick Start
 
-At runtime the chatbot:
-
-1. Loads the FAQ data.
-2. Precomputes FAQ embeddings once at startup.
-3. Embeds each user query.
-4. Ranks FAQs by cosine similarity, then applies a small question-fit reranking bonus.
-5. Only answers when the top result clears both:
-   - a minimum score threshold
-   - a minimum margin over the second-best result
-
-If the embedding stack cannot load, the app falls back once to a simpler lexical matcher instead of crashing.
-
-## Why This Is the Right Default for 20 FAQs
-
-For a fixed FAQ list this is a strong fit because it is:
-
-- cheap: no API key or per-request model cost
-- fast after startup: FAQ embeddings are cached in memory
-- deterministic: the same question produces the same ranking behavior
-- low hallucination risk: the bot returns stored answers or declines to answer
-
-I deliberately did not make an LLM the default here. With only 20 canonical FAQs, generation would add cost, latency, and more ways to answer confidently from weak evidence.
-
-## No-Match Protection
-
-The bot should not bluff. It rejects weak matches if either:
-
-- the top semantic score is too low
-- the top result is too close to the runner-up
-
-When that happens it returns:
-
-`Sorry, I don't know that one — please ask a member of staff.`
-
-## How To Run
-
-From the project directory:
+If you just want to run the chatbot:
 
 ```bash
 python -m pip install -r requirements.txt
 python main.py
 ```
 
-Useful flags:
+If you want the more educational, table-based interactive flow:
+
+```bash
+python -m src.live_test
+```
+
+If you want to run tests:
+
+```bash
+pytest
+```
+
+## Recommended Run Order
+
+If you are opening this repository for the first time, the easiest order is:
+
+1. Read this root README.
+2. Run `python main.py` once.
+3. Run `python -m src.live_test` once.
+4. Open `src/Jupyter Notebooks/riverside_live_test.ipynb`.
+5. Read `src/README.md` if you want the code walkthrough.
+6. Read `tests/README.md` if you want to understand the test strategy.
+
+## Why Python Was The Right Choice Here
+
+The original brief said the team works mainly in Node and TypeScript, but for this exact problem Python is the cleaner tool.
+
+Why:
+
+- the `sentence-transformers` library is mature and straightforward in Python
+- the local embedding workflow is simpler in Python than in Node
+- the project already contained a partial Python scaffold
+- the time-box favored finishing a strong solution over changing stacks
+
+This means the submission optimizes for:
+
+- correctness
+- clarity
+- speed of implementation
+- low setup friction for someone reviewing the repository
+
+## What The Bot Actually Does
+
+The chatbot reads FAQ entries from `faqs.json`. Each entry has:
+
+- an `id`
+- a `question`
+- an `answer`
+
+The bot then:
+
+1. loads those FAQs into Python objects
+2. turns each FAQ into a searchable text block
+3. creates embeddings for those FAQ blocks once
+4. turns the user question into an embedding
+5. compares the user question against every FAQ
+6. ranks the FAQs from best to worst
+7. answers only if the top match looks safe enough
+
+If the top match does not look safe enough, the bot declines to answer and says:
+
+`Sorry, I don't know that one — please ask a member of staff.`
+
+## Matching Strategy
+
+The main matcher uses the model:
+
+- `sentence-transformers/multi-qa-MiniLM-L6-cos-v1`
+
+Each FAQ is embedded as:
+
+```text
+Question: ...
+Answer: ...
+```
+
+That is important because many user questions are short or casual. Sometimes the FAQ answer contains useful wording that is not present in the FAQ question.
+
+Example idea:
+
+- user asks: `where's the shop?`
+- location-related clues appear in the FAQ answer as well as the question
+
+The matcher also adds a small question-fit bonus after the main semantic score. That helps short everyday phrasing land on the FAQ whose question most closely matches what the user seems to mean.
+
+## Safety Rules
+
+The bot does not answer every time it sees something “sort of close”.
+
+It uses two safety checks:
+
+- the best match must clear a minimum score
+- the best match must be clearly ahead of second place
+
+This is important because a chatbot that refuses sometimes is often better than a chatbot that sounds confident and gives the wrong answer.
+
+There is also a special rejection rule for very specific event-date questions. The FAQ data only says to check the noticeboard, so the bot is designed not to pretend it knows the next exact event date.
+
+## Fallback Mode
+
+If the embedding model cannot load, the bot does not crash. It falls back to a simpler lexical matcher.
+
+That fallback matcher:
+
+- compares important words
+- removes common filler words
+- adds a few helpful word aliases
+- still uses safety thresholds
+
+This is weaker than the semantic matcher, but it is much better than a hard crash in a fresh environment.
+
+## Why This Approach Makes Sense For 20 FAQs
+
+For a tiny closed FAQ file, this local retrieval approach is a good default because it is:
+
+- inexpensive
+- fast after warm-up
+- deterministic
+- grounded in the source answers
+- easy to debug
+- easy to test
+
+An LLM could answer some questions well, but it would also add:
+
+- API cost
+- extra latency
+- prompt design complexity
+- more failure modes
+- a higher chance of fluent wrong answers
+
+That tradeoff is usually not worth it for 20 fixed FAQ entries.
+
+## How To Run The Main CLI
+
+From the project root:
+
+```bash
+python main.py
+```
+
+Optional flags:
 
 ```bash
 python main.py --debug
 python main.py --faq-path ./faqs.json
 ```
 
-Notes:
+What the flags mean:
 
-- The first semantic run may download the sentence-transformers model.
-- If that download fails, the chatbot will keep working in lexical fallback mode.
+- `--debug`
+  - prints candidate ranking information while matching
+- `--faq-path`
+  - lets you point the chatbot at a different FAQ file
 
-## Example
+## How To Run The Interactive Live Test
+
+The repository includes a second interactive runner designed for visibility rather than minimalism:
+
+```bash
+python -m src.live_test
+```
+
+This runner:
+
+- prints environment information
+- checks whether the embedding package exists
+- installs it if needed
+- warms the model early so the later question step is cleaner
+- asks you for a question
+- prints a rank table of the best candidates
+- prints the winning answer only if the safe threshold is met
+
+This mirrors what the notebook demo is doing and is useful when you want to inspect the ranking behavior instead of only seeing the final answer.
+
+## Notebook Guide
+
+There are two notebook files in `src/Jupyter Notebooks/`:
+
+- `riverside_function_breakdown.ipynb`
+  - a teaching notebook that explains the code in very plain English
+- `riverside_live_test.ipynb`
+  - a small interactive notebook that lets you type a question and inspect the ranking table
+
+If you want the notebook tour, start with:
+
+- `src/Jupyter Notebooks/riverside_live_test.ipynb`
+
+If you want the code explanation, open:
+
+- `src/Jupyter Notebooks/riverside_function_breakdown.ipynb`
+
+## Example CLI Interaction
+
+Example:
 
 ```text
 You: when can I come in?
@@ -88,70 +242,178 @@ You: what is your phone number?
 Bot: Sorry, I don't know that one — please ask a member of staff.
 ```
 
-## Tests
+Example from the live test view:
 
-Run:
+```text
+User question:
+where's the shop?
+
+Rank table:
+Rank   FAQ ID   Score    Question
+--------------------------------------------------------------------------------
+1      2        0.551    Where are you located?
+2      7        0.480    Is there parking nearby?
+3      17       0.418    Is the shop wheelchair accessible?
+```
+
+## Installation Notes
+
+Basic installation:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Packages currently listed:
+
+- `numpy`
+- `sentence-transformers`
+- `pytest`
+
+First-run note:
+
+- the first semantic run may download the model from Hugging Face
+
+If the model or package cannot be loaded:
+
+- the CLI still works in lexical fallback mode
+- the live test runner tries to install `sentence-transformers` automatically
+
+## File Guide
+
+Important files:
+
+- `main.py`
+  - root entrypoint for the production-style CLI
+- `faqs.json`
+  - the knowledge base
+- `requirements.txt`
+  - Python dependencies
+- `src/chatbot.py`
+  - the main CLI loop
+- `src/data.py`
+  - FAQ loading
+- `src/matchers.py`
+  - local semantic matching, lexical fallback, and the LLM stub
+- `src/models.py`
+  - data structures used across the app
+- `src/live_test.py`
+  - notebook-style live inspection runner
+- `tests/`
+  - automated tests
+
+## Testing
+
+Run all tests:
 
 ```bash
 pytest
 ```
 
-The tests cover:
+What the tests cover:
 
-- semantic matcher caching FAQ embeddings instead of recomputing every turn
-- weak-match rejection
-- lexical fallback if embeddings fail
-- CLI interaction flow
-- a compact set of expected-match and reject cases
+- FAQ loading and CLI flow
+- semantic matcher caching behavior
+- safety rejection behavior
+- lexical fallback behavior
+- expected paraphrase matches
+- expected no-match cases
+- the intentionally unimplemented `LlmMatcher`
+
+The evaluation tests are intentionally small. They are there to show judgment, not to pretend this repository contains a full production evaluation suite.
 
 ## Tradeoffs
 
-Pros:
+Things this project does well:
 
-- grounded answers from the provided FAQ set
-- simple runtime model
-- no external API dependency in the core path
+- stays grounded in the provided FAQ answers
+- avoids API dependency in the main path
+- makes ranking behavior inspectable
+- handles missing-model conditions gracefully
+- keeps the code short enough to reason about quickly
 
-Cons:
+Things this project does not try to do yet:
 
-- threshold tuning is heuristic
-- local retrieval will eventually struggle as the dataset grows and overlaps more
-- this version returns one stored answer rather than synthesising across sources
+- answer from multiple sources
+- maintain chat memory
+- rewrite answers in a friendly prose style
+- support live content editing by non-engineers
+- provide analytics, tracing, or production observability
 
-With more time, I would tune thresholds against a slightly larger paraphrase set and capture a few failure examples to guide future improvements.
+## How I Would Scale This Beyond 20 FAQs
 
-## How I'd Scale This
+The local semantic matcher is the right default now, but I would not keep the architecture frozen forever.
 
-Once the dataset grows beyond a small FAQ file, I would keep retrieval first and add an LLM only after retrieval.
+I would move toward a retrieval-first LLM setup when:
 
-### Trigger To Scale Beyond Local-Only Retrieval
+- the FAQ set becomes much larger
+- answers overlap heavily
+- answers need synthesis from multiple documents
+- the team wants experimentation, analytics, or better observability
 
-- the FAQ set grows materially beyond 20 entries
-- multiple answers become semantically similar
-- answers need synthesis across several documents
-- content starts changing frequently and needs better analytics or evaluation
+### Scaled Architecture
 
-### Recommended Retrieval-First LLM Architecture
+The scaling path I would choose is:
 
-1. Embed the full FAQ or knowledge base.
-2. Retrieve the top `k` candidates for the user query.
-3. If one result is clearly dominant, return its stored answer directly.
-4. If the query is ambiguous, send only the top candidates to an LLM.
-5. If the evidence is weak, fall back instead of generating.
+1. keep retrieval as the first step
+2. retrieve the top few candidates
+3. return a stored answer directly when the winner is obvious
+4. call an LLM only when the question is ambiguous or needs synthesis
+5. still refuse to answer when the evidence is weak
 
-### What The LLM Version Should Return
+### Why Retrieval First Still Matters
 
-The future `LlmMatcher` should keep the same matcher contract and return structured output such as:
+Even in the LLM future version, retrieval should remain first because it:
 
-- `faq_id`
-- `confidence`
+- keeps answers grounded
+- reduces hallucination risk
+- reduces prompt size
+- lowers cost
+- gives clearer debugging signals
+
+### Plausible Future Modes
+
+- retrieval + LLM reranker
+  - good when final answers should remain canonical stored answers
+- retrieval-augmented generation
+  - good when several documents must be combined
+- hybrid routing
+  - good when cheap local retrieval should answer easy questions and the LLM should only handle the hard ones
+
+### Future LLM Contract
+
+The `LlmMatcher` placeholder in this repository exists to show where that future work would fit.
+
+The future return shape should include things like:
+
+- chosen FAQ id
+- confidence label
 - `no_match`
-- optional internal rationale for logs only
+- optional internal reasoning for logs only
 
-There are a few realistic scale-up options:
+## Why There Is A Website Folder
 
-- retrieval + LLM reranker: best when canonical FAQ answers should remain the final output
-- retrieval-augmented generation: best when answers need light synthesis across multiple sources
-- hybrid routing: let the local matcher answer easy queries and call the LLM only for ambiguous ones
+The `website/` folder exists as a scaffold, not as a finished part of the submission.
 
-I would not use LangGraph for this task. I also would not add LangChain to the main implementation. If the LLM path becomes real later, the next production concern would be observability and evals, where a tool like Langfuse could help.
+It is currently not part of the main chatbot path and should be treated as future-facing or optional.
+
+See `website/README.md` for details.
+
+## Extra Documentation In This Repo
+
+This repository now includes several README files on purpose:
+
+- `README.md`
+  - top-level project overview
+- `src/README.md`
+  - source-code walkthrough
+- `src/Jupyter Notebooks/README.md`
+  - notebook guide
+- `tests/README.md`
+  - testing guide
+- `website/README.md`
+  - website scaffold notes
+- `assets/README.md`
+  - asset-folder notes
+
+That may be more documentation than a tiny task strictly needs, but it makes the repository easier to review quickly and easier to maintain later.
