@@ -1,0 +1,18 @@
+{
+  "name": "deep-chat-react",
+  "version": "2.4.2",
+  "description": "React wrapper for Deep Chat",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "peerDependencies": {
+    "react": ">=17.0.0",
+    "deep-chat": ">=2.0.0"
+  },
+  "keywords": ["react", "chat", "ai", "chatbot"],
+  "author": "Ovidijus Parsiunas",
+  "license": "MIT"
+}

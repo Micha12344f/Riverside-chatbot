@@ -1,0 +1,10 @@
+{
+  "version": "2.4.2",
+  "tags": [
+    {
+      "name": "deep-chat",
+      "path": "./dist/index.js",
+      "description": "Fully customizable AI chat component"
+    }
+  ]
+}

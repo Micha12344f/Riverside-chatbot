@@ -1,0 +1,16 @@
+{
+  "name": "deep-chat",
+  "version": "2.4.2",
+  "description": "Fully customizable AI chat component for your website",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc && vite build",
+    "build:bundle": "rollup -c",
+    "dev": "vite",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": ["chat", "ai", "chatbot", "component", "web-component"],
+  "author": "Ovidijus Parsiunas",
+  "license": "MIT"
+}

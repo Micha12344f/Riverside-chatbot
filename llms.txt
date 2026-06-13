@@ -1,0 +1,49 @@
+# Deep Chat - LLM Reference
+
+Web component (`deep-chat`) and React wrapper (`deep-chat-react`) for AI chat interfaces.
+
+## Installation
+```bash
+npm install deep-chat
+npm install deep-chat-react
+```
+
+## Connection
+
+### `connect`
+```typescript
+connect: {
+  url?: string
+  method?: string  // default: "POST"
+  headers?: {[key: string]: string}
+  additionalBodyProps?: {[key: string]: any}
+  credentials?: string  // default: "same-origin"
+  websocket?: boolean | string | string[]
+  stream?: true | {simulation?: boolean | number | string, readable?: boolean, partialRender?: boolean}
+  handler?: (body: {messages: MessageContent[]}, signals: Signals) => void
+}
+
+Signals: {
+  onResponse: (response: Response) => Promise<void>
+  onOpen: () => void
+  onClose: () => void
+  stopClicked: {listener: () => void}
+  newUserMessage: {listener: (body: any) => void}
+}
+```
+
+Request body: `{messages: MessageContent[]}` for text-only, or FormData with `files` array and `message{index}` properties for file uploads.
+
+### `directConnection`
+Prototyping only - API keys in client code are visible in browser. Use `connect` with server proxy for production.
+
+Supports: AssemblyAI, Azure, BigModel, Claude, Cohere, DeepSeek, Dify, Gemini, Groq, HuggingFace, Kimi, MiniMax, Mistral, Ollama, OpenAI, OpenRouter, OpenWebUI, Perplexity, Qwen, StabilityAI, Together, X
+
+```html
+<deep-chat directConnection='{"openAI": {"key": "sk-...", "chat": {"model": "gpt-4"}}}'></deep-chat>
+```
+
+### `webModel`
+```html
+<deep-chat webModel="true"></deep-chat>
+```
