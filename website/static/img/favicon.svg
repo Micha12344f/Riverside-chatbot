@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Riverside Books Chatbot">
-  <rect width="64" height="64" rx="14" fill="#8e5d24"/>
-  <path d="M18 16h18c6 0 10 4 10 10v22H28c-4 0-7 1-10 3V16z" fill="#f7f0e2"/>
-  <path d="M46 48H28c-4 0-7 1-10 3V28c3-2 6-3 10-3h18v23z" fill="#ead8ba"/>
-  <path d="M28 25v23c-4 0-7 1-10 3V28c3-2 6-3 10-3z" fill="#fff8ea"/>
-</svg>

@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "riverside-chatbot-cli-app"
+version = "1.0.0"
+description = "Standalone CLI app for the Riverside Books chatbot"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "sentence-transformers>=3.0",
+    "textual>=0.70,<1.0",
+]
+
+[project.scripts]
+riverside-chatbot = "riverside_cli_app.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["riverside_cli_app*"]
+
+[tool.setuptools.package-data]
+riverside_cli_app = ["runtime_assets/*.json", "*.tcss"]

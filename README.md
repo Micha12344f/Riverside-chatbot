@@ -1,419 +1,130 @@
 # Riverside Books Chatbot
 
-This repository contains a small but deliberately thoughtful FAQ chatbot for the fictional independent bookshop **Riverside Books**. The core deliverable is a command-line chatbot that answers questions from a fixed FAQ file without relying on a hosted model or an API key.
+An AI-powered FAQ chatbot for a fictional independent bookshop, with a backend structured for AWS deployment and a frontend structured for Vercel.
 
-The project is built around one idea:
+## CLI
 
-- for a tiny, closed set of 20 FAQs, a local semantic retriever is a better default than an LLM
+<p align="center">
+  <img src="assets/demo-cli.gif" alt="CLI demo" />
+</p>
 
-That choice keeps the project:
+## Frontend website
 
-- cheap to run
-- easy to explain
-- easy to test
-- much less likely to hallucinate
+![Frontend demo](assets/demo-frontend.gif)
 
-The repository also contains notebook-based teaching material and an interactive inspection tool so the matching logic is visible instead of hidden.
+## Get started
 
-## What Is In This Repository
+> **Note**
+> Start with the backend CLI for the quickest local run. The frontend is the presentation layer, and the backend is the runtime path that powers the chatbot logic.
 
-At a high level, the repository has five main parts:
+1. Clone, install, and run the backend:
 
-- `main.py`
-  - small command-line entrypoint for the production-style chatbot
-- `src/`
-  - the real Python code: FAQ loading, matching logic, CLI logic, and the live test helper
-- `tests/`
-  - automated checks for matching, CLI flow, fallback behavior, and evaluation cases
-- `src/Jupyter Notebooks/`
-  - notebooks for explanation and interactive exploration
-- `website/`
-  - a website scaffold that is present in the repository but not used by the main solution
+   **Windows:**
 
-## Quick Start
+   ```powershell
+   git clone https://github.com/Micha12344f/Riverside-chatbot.git
+   cd Riverside-chatbot/backend
+   pip install -r app/requirements.txt
+   python main.py
+   ```
 
-If you just want to run the chatbot:
+   **macOS:**
 
-```bash
-python -m pip install -r requirements.txt
-python main.py
-```
+   ```bash
+   git clone https://github.com/Micha12344f/Riverside-chatbot.git
+   cd Riverside-chatbot/backend
+   pip3 install -r app/requirements.txt
+   python3 main.py
+   ```
 
-If you want the more educational, table-based interactive flow:
+   **Linux:**
 
-```bash
-python -m src.live_test
-```
+   ```bash
+   git clone https://github.com/Micha12344f/Riverside-chatbot.git
+   cd Riverside-chatbot/backend
+   pip3 install -r app/requirements.txt
+   python3 main.py
+   ```
 
-If you want to run tests:
+   > **Note** — If `pip`/`pip3` isn't available, install Python first:
+   > - Windows: [python.org installer](https://www.python.org/downloads/) or `winget install Python.Python.3.11`
+   > - macOS: `brew install python` (also makes `pip3` and `python3` available)
+   > - Linux: `sudo apt install python3-pip` (or your distro's package manager)
 
-```bash
-pytest
-```
+2. TUI experience:
 
-## Recommended Run Order
+   For the standalone Riverside terminal UI:
 
-If you are opening this repository for the first time, the easiest order is:
+   **Windows:**
 
-1. Read this root README.
-2. Run `python main.py` once.
-3. Run `python -m src.live_test` once.
-4. Open `src/Jupyter Notebooks/riverside_live_test.ipynb`.
-5. Read `src/README.md` if you want the code walkthrough.
-6. Read `tests/README.md` if you want to understand the test strategy.
+   ```powershell
+   cd Riverside-chatbot/Riverside-books-CLI
+   pip install -r requirements.txt
+   python main.py
+   ```
 
-## Why Python Was The Right Choice Here
+3. Frontend experience:
 
-The original brief said the team works mainly in Node and TypeScript, but for this exact problem Python is the cleaner tool.
+   For more information, check [frontend/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/frontend/README.md>) for the frontend walkthrough and deployment notes.
 
-Why:
+4. Backend structure and deployment notes:
 
-- the `sentence-transformers` library is mature and straightforward in Python
-- the local embedding workflow is simpler in Python than in Node
-- the project already contained a partial Python scaffold
-- the time-box favored finishing a strong solution over changing stacks
+   For more information, check [backend/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/backend/README.md>) for the backend entrypoints, AWS-facing structure, and runtime layout.
 
-This means the submission optimizes for:
+## Why This Approach Was Chosen
 
-- correctness
-- clarity
-- speed of implementation
-- low setup friction for someone reviewing the repository
+![Why this approach](assets/demo-why-this-approach.gif)
 
-## What The Bot Actually Does
+This project uses semantic retrieval as the main matching strategy because the FAQ set is fixed, small, and best answered from grounded source content rather than free-form generation.
 
-The chatbot reads FAQ entries from `faqs.json`. Each entry has:
+That gives a strong balance of quality and control:
 
-- an `id`
-- a `question`
-- an `answer`
+- better paraphrase handling than keyword-only matching
+- far lower hallucination risk than an LLM-first chatbot
+- lower operational cost than calling a model for every question
+- easier testing and clearer failure behavior
 
-The bot then:
+For more information on the decision-making behind the project, check [backend/Project-explained/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/backend/Project-explained/README.md>).
 
-1. loads those FAQs into Python objects
-2. turns each FAQ into a searchable text block
-3. creates embeddings for those FAQ blocks once
-4. turns the user question into an embedding
-5. compares the user question against every FAQ
-6. ranks the FAQs from best to worst
-7. answers only if the top match looks safe enough
+## How Our Matching Works
 
-If the top match does not look safe enough, the bot declines to answer and says:
+![Matching flow](assets/demo-matching-flow.gif)
 
-`Sorry, I don't know that one — please ask a member of staff.`
+The matching flow is intentionally simple:
 
-## Matching Strategy
+1. Load the FAQ data from the backend runtime assets.
+2. Turn each FAQ into a searchable text block using both question and answer text.
+3. Compare the user query against the FAQ set using semantic similarity.
+4. Apply confidence rules so weak or ambiguous matches are rejected.
+5. Fall back to a lexical matcher if the embedding path is unavailable.
 
-The main matcher uses the model:
+For more information on the runtime code behind this flow, check [backend/app/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/backend/app/README.md>). For the broader project explanation, check [backend/Project-explained/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/backend/Project-explained/README.md>).
 
-- `sentence-transformers/multi-qa-MiniLM-L6-cos-v1`
+## Trade-Offs
 
-Each FAQ is embedded as:
+![Trade-offs visual](assets/demo-tradeoffs.gif)
 
-```text
-Question: ...
-Answer: ...
-```
+| Approach | Accuracy | Latency | Cost | Hallucination |
+| --- | --- | --- | --- | --- |
+| LLM as the chat engine | High | Medium-High | High | High |
+| Embeddings / semantic matching | Medium-High | Medium | Low-Medium | Low |
+| Keyword overlap / fuzzy matching | Low-Medium | Low | Low | Very low |
 
-That is important because many user questions are short or casual. Sometimes the FAQ answer contains useful wording that is not present in the FAQ question.
+For this project, semantic matching is the best fit because it handles paraphrased questions well without paying the cost and hallucination risk of an LLM-first design.
 
-Example idea:
+For more information on the longer reasoning behind these trade-offs, check [backend/Project-explained/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/backend/Project-explained/README.md>).
 
-- user asks: `where's the shop?`
-- location-related clues appear in the FAQ answer as well as the question
+## What's Next For Scale
 
-The matcher also adds a small question-fit bonus after the main semantic score. That helps short everyday phrasing land on the FAQ whose question most closely matches what the user seems to mean.
+![Scale path](assets/demo-scale-path.gif)
 
-## Safety Rules
+The next step is to expose the backend as an AWS-hosted API that the Vercel frontend can call directly.
 
-The bot does not answer every time it sees something “sort of close”.
+After that, the scaling path is:
 
-It uses two safety checks:
+1. add a clean HTTP API layer in the backend
+2. introduce better evaluation and monitoring
+3. add deployment and environment separation across dev, preview, and production
+4. use LLM routing only where retrieval alone is not enough
 
-- the best match must clear a minimum score
-- the best match must be clearly ahead of second place
-
-This is important because a chatbot that refuses sometimes is often better than a chatbot that sounds confident and gives the wrong answer.
-
-There is also a special rejection rule for very specific event-date questions. The FAQ data only says to check the noticeboard, so the bot is designed not to pretend it knows the next exact event date.
-
-## Fallback Mode
-
-If the embedding model cannot load, the bot does not crash. It falls back to a simpler lexical matcher.
-
-That fallback matcher:
-
-- compares important words
-- removes common filler words
-- adds a few helpful word aliases
-- still uses safety thresholds
-
-This is weaker than the semantic matcher, but it is much better than a hard crash in a fresh environment.
-
-## Why This Approach Makes Sense For 20 FAQs
-
-For a tiny closed FAQ file, this local retrieval approach is a good default because it is:
-
-- inexpensive
-- fast after warm-up
-- deterministic
-- grounded in the source answers
-- easy to debug
-- easy to test
-
-An LLM could answer some questions well, but it would also add:
-
-- API cost
-- extra latency
-- prompt design complexity
-- more failure modes
-- a higher chance of fluent wrong answers
-
-That tradeoff is usually not worth it for 20 fixed FAQ entries.
-
-## How To Run The Main CLI
-
-From the project root:
-
-```bash
-python main.py
-```
-
-Optional flags:
-
-```bash
-python main.py --debug
-python main.py --faq-path ./faqs.json
-```
-
-What the flags mean:
-
-- `--debug`
-  - prints candidate ranking information while matching
-- `--faq-path`
-  - lets you point the chatbot at a different FAQ file
-
-## How To Run The Interactive Live Test
-
-The repository includes a second interactive runner designed for visibility rather than minimalism:
-
-```bash
-python -m src.live_test
-```
-
-This runner:
-
-- prints environment information
-- checks whether the embedding package exists
-- installs it if needed
-- warms the model early so the later question step is cleaner
-- asks you for a question
-- prints a rank table of the best candidates
-- prints the winning answer only if the safe threshold is met
-
-This mirrors what the notebook demo is doing and is useful when you want to inspect the ranking behavior instead of only seeing the final answer.
-
-## Notebook Guide
-
-There are two notebook files in `src/Jupyter Notebooks/`:
-
-- `riverside_function_breakdown.ipynb`
-  - a teaching notebook that explains the code in very plain English
-- `riverside_live_test.ipynb`
-  - a small interactive notebook that lets you type a question and inspect the ranking table
-
-If you want the notebook tour, start with:
-
-- `src/Jupyter Notebooks/riverside_live_test.ipynb`
-
-If you want the code explanation, open:
-
-- `src/Jupyter Notebooks/riverside_function_breakdown.ipynb`
-
-## Example CLI Interaction
-
-Example:
-
-```text
-You: when can I come in?
-Bot: We're open 9am to 6pm Monday to Saturday, and 11am to 4pm on Sundays.
-
-You: what is your phone number?
-Bot: Sorry, I don't know that one — please ask a member of staff.
-```
-
-Example from the live test view:
-
-```text
-User question:
-where's the shop?
-
-Rank table:
-Rank   FAQ ID   Score    Question
---------------------------------------------------------------------------------
-1      2        0.551    Where are you located?
-2      7        0.480    Is there parking nearby?
-3      17       0.418    Is the shop wheelchair accessible?
-```
-
-## Installation Notes
-
-Basic installation:
-
-```bash
-python -m pip install -r requirements.txt
-```
-
-Packages currently listed:
-
-- `numpy`
-- `sentence-transformers`
-- `pytest`
-
-First-run note:
-
-- the first semantic run may download the model from Hugging Face
-
-If the model or package cannot be loaded:
-
-- the CLI still works in lexical fallback mode
-- the live test runner tries to install `sentence-transformers` automatically
-
-## File Guide
-
-Important files:
-
-- `main.py`
-  - root entrypoint for the production-style CLI
-- `faqs.json`
-  - the knowledge base
-- `requirements.txt`
-  - Python dependencies
-- `src/chatbot.py`
-  - the main CLI loop
-- `src/data.py`
-  - FAQ loading
-- `src/matchers.py`
-  - local semantic matching, lexical fallback, and the LLM stub
-- `src/models.py`
-  - data structures used across the app
-- `src/live_test.py`
-  - notebook-style live inspection runner
-- `tests/`
-  - automated tests
-
-## Testing
-
-Run all tests:
-
-```bash
-pytest
-```
-
-What the tests cover:
-
-- FAQ loading and CLI flow
-- semantic matcher caching behavior
-- safety rejection behavior
-- lexical fallback behavior
-- expected paraphrase matches
-- expected no-match cases
-- the intentionally unimplemented `LlmMatcher`
-
-The evaluation tests are intentionally small. They are there to show judgment, not to pretend this repository contains a full production evaluation suite.
-
-## Tradeoffs
-
-Things this project does well:
-
-- stays grounded in the provided FAQ answers
-- avoids API dependency in the main path
-- makes ranking behavior inspectable
-- handles missing-model conditions gracefully
-- keeps the code short enough to reason about quickly
-
-Things this project does not try to do yet:
-
-- answer from multiple sources
-- maintain chat memory
-- rewrite answers in a friendly prose style
-- support live content editing by non-engineers
-- provide analytics, tracing, or production observability
-
-## How I Would Scale This Beyond 20 FAQs
-
-The local semantic matcher is the right default now, but I would not keep the architecture frozen forever.
-
-I would move toward a retrieval-first LLM setup when:
-
-- the FAQ set becomes much larger
-- answers overlap heavily
-- answers need synthesis from multiple documents
-- the team wants experimentation, analytics, or better observability
-
-### Scaled Architecture
-
-The scaling path I would choose is:
-
-1. keep retrieval as the first step
-2. retrieve the top few candidates
-3. return a stored answer directly when the winner is obvious
-4. call an LLM only when the question is ambiguous or needs synthesis
-5. still refuse to answer when the evidence is weak
-
-### Why Retrieval First Still Matters
-
-Even in the LLM future version, retrieval should remain first because it:
-
-- keeps answers grounded
-- reduces hallucination risk
-- reduces prompt size
-- lowers cost
-- gives clearer debugging signals
-
-### Plausible Future Modes
-
-- retrieval + LLM reranker
-  - good when final answers should remain canonical stored answers
-- retrieval-augmented generation
-  - good when several documents must be combined
-- hybrid routing
-  - good when cheap local retrieval should answer easy questions and the LLM should only handle the hard ones
-
-### Future LLM Contract
-
-The `LlmMatcher` placeholder in this repository exists to show where that future work would fit.
-
-The future return shape should include things like:
-
-- chosen FAQ id
-- confidence label
-- `no_match`
-- optional internal reasoning for logs only
-
-## Why There Is A Website Folder
-
-The `website/` folder exists as a scaffold, not as a finished part of the submission.
-
-It is currently not part of the main chatbot path and should be treated as future-facing or optional.
-
-See `website/README.md` for details.
-
-## Extra Documentation In This Repo
-
-This repository now includes several README files on purpose:
-
-- `README.md`
-  - top-level project overview
-- `src/README.md`
-  - source-code walkthrough
-- `src/Jupyter Notebooks/README.md`
-  - notebook guide
-- `tests/README.md`
-  - testing guide
-- `website/README.md`
-  - website scaffold notes
-- `assets/README.md`
-  - asset-folder notes
-
-That may be more documentation than a tiny task strictly needs, but it makes the repository easier to review quickly and easier to maintain later.
+For more information on backend evolution, check [backend/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/backend/README.md>). For frontend delivery details, check [frontend/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/frontend/README.md>).

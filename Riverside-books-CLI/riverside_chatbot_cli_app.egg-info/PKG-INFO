@@ -1,0 +1,73 @@
+Metadata-Version: 2.4
+Name: riverside-chatbot-cli-app
+Version: 1.0.0
+Summary: Standalone CLI app for the Riverside Books chatbot
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: numpy>=1.26
+Requires-Dist: sentence-transformers>=3.0
+Requires-Dist: textual<1.0,>=0.70
+
+# Riverside Chatbot CLI App
+
+This is a standalone CLI version of the Riverside Books chatbot, created as a separate project so the original `Riverside Chatbot solution` folder stays untouched.
+
+The default experience is now a simple full-screen TUI for Riverside Books, with a book-themed sidebar, chat transcript, and fixed input box.
+
+## Quick start
+
+From this folder:
+
+```powershell
+cd "C:\Users\sossi\OneDrive\Desktop\agent builder workspace\CLI app"
+python -m pip install -r requirements.txt
+python main.py
+```
+
+Ask a question in the input bar and press `Enter`. Press `Ctrl+C` to quit.
+
+## Windows launcher
+
+From PowerShell in this folder, you can also run:
+
+```powershell
+.\riverside-chatbot.cmd
+```
+
+That wrapper avoids any PATH setup.
+
+## Plain CLI fallback
+
+If you want the older line-by-line terminal mode instead of the full-screen UI:
+
+```powershell
+python main.py --plain
+```
+
+## Install as a command
+
+If you want a reusable terminal command:
+
+```powershell
+cd "C:\Users\sossi\OneDrive\Desktop\agent builder workspace\CLI app"
+python -m pip install -e .
+```
+
+If `riverside-chatbot` is not recognized afterward, your Python Scripts folder is not on PATH in the current shell. In that case, keep using `python main.py`, `python -m riverside_cli_app.cli`, or `.\riverside-chatbot.cmd`.
+
+## Useful options
+
+```powershell
+python main.py --help
+python main.py --debug
+python main.py --lexical-only
+python main.py --plain
+python main.py --faq-path .\riverside_cli_app\runtime_assets\faqs.json
+.\riverside-chatbot.cmd --lexical-only
+```
+
+## Notes
+
+- The first semantic run may download the sentence-transformer model.
+- If you want to avoid that, run `python main.py --lexical-only`.
+- Inside the TUI, `F2` toggles matcher mode, `F3` focuses the input box, and `Ctrl+L` clears the chat.

@@ -1,0 +1,48 @@
+name: Deploy Frontend Vercel
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - ".github/workflows/deploy-frontend-vercel.yml"
+      - "frontend/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-production
+  cancel-in-progress: true
+
+jobs:
+  deploy-frontend:
+    name: Deploy Frontend To Vercel
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: team_evJgKc6lOVkHCx5bHR0gKQVH
+      VERCEL_PROJECT_ID: prj_uW4dsqxAkq592LsmaCk5inEfdXfV
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify frontend entry file exists
+        run: test -f "frontend/index.html"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel production settings
+        working-directory: frontend
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy frontend to Vercel
+        working-directory: frontend
+        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}

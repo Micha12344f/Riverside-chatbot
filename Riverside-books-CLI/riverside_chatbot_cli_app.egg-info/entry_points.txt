@@ -1,0 +1,2 @@
+[console_scripts]
+riverside-chatbot = riverside_cli_app.cli:main

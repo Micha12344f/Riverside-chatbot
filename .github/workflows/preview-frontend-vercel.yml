@@ -1,0 +1,55 @@
+name: Preview Frontend Vercel
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/preview-frontend-vercel.yml"
+      - "frontend/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: vercel-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview-frontend:
+    name: Build Frontend Preview
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: team_evJgKc6lOVkHCx5bHR0gKQVH
+      VERCEL_PROJECT_ID: prj_uW4dsqxAkq592LsmaCk5inEfdXfV
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify frontend entry file exists
+        run: test -f "frontend/index.html"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel preview settings
+        working-directory: frontend
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Create Vercel preview deployment
+        id: vercel-preview
+        working-directory: frontend
+        run: |
+          $url = vercel deploy --token=${{ secrets.VERCEL_TOKEN }}
+          "preview_url=$url" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Add preview link to workflow summary
+        run: |
+          echo "### Frontend preview" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.vercel-preview.outputs.preview_url }}" >> $GITHUB_STEP_SUMMARY
