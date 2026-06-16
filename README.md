@@ -15,61 +15,56 @@ An AI-powered FAQ chatbot for a fictional independent bookshop, with a backend s
 ## Get started
 
 > **Note**
-> Start with the backend CLI for the quickest local run. The frontend is the presentation layer, and the backend is the runtime path that powers the chatbot logic.
+> Start with the TUI for the quickest local run. The frontend is the web presentation layer, and the backend is structured separately for later AWS deployment.
 
-1. Clone, install, and run the backend:
+1. Clone the repo:
 
-   **Windows:**
+```powershell
+git clone --branch main https://github.com/Micha12344f/Riverside-chatbot.git
+```
 
-   ```powershell
-   git clone https://github.com/Micha12344f/Riverside-chatbot.git
-   cd Riverside-chatbot/AWS-deployed-backend
-   pip install -r app/requirements.txt
-   python main.py
-   ```
+2. Move into the TUI folder:
 
-   **macOS:**
+```powershell
+cd Riverside-chatbot
+cd Riverside-books-CLI
+```
 
-   ```bash
-   git clone https://github.com/Micha12344f/Riverside-chatbot.git
-   cd Riverside-chatbot/AWS-deployed-backend
-   pip3 install -r app/requirements.txt
-   python3 main.py
-   ```
+3. Install dependencies and run the TUI.
 
-   **Linux:**
+**Windows**
 
-   ```bash
-   git clone https://github.com/Micha12344f/Riverside-chatbot.git
-   cd Riverside-chatbot/AWS-deployed-backend
-   pip3 install -r app/requirements.txt
-   python3 main.py
-   ```
+```powershell
+pip install -r requirements.txt
+python main.py
+```
 
-   > **Note** — If `pip`/`pip3` isn't available, install Python first:
-   > - Windows: [python.org installer](https://www.python.org/downloads/) or `winget install Python.Python.3.11`
-   > - macOS: `brew install python` (also makes `pip3` and `python3` available)
-   > - Linux: `sudo apt install python3-pip` (or your distro's package manager)
+**macOS**
 
-2. TUI experience:
+```bash
+pip3 install -r requirements.txt
+python3 main.py
+```
 
-   For the standalone Riverside terminal UI:
+**Linux**
 
-   **Windows:**
+```bash
+pip3 install -r requirements.txt
+python3 main.py
+```
 
-   ```powershell
-   cd Riverside-chatbot/Riverside-books-CLI
-   pip install -r requirements.txt
-   python main.py
-   ```
+> **Note** — If `pip`/`pip3` isn't available, install Python first:
+> - Windows: [python.org installer](https://www.python.org/downloads/) or `winget install Python.Python.3.11`
+> - macOS: `brew install python` (also makes `pip3` and `python3` available)
+> - Linux: `sudo apt install python3-pip` (or your distro's package manager)
 
-3. Frontend experience:
+4. Frontend website:
 
-   For more information, check [Vercel-deployed-frontend/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/Vercel-deployed-frontend/README.md>) for the frontend walkthrough and deployment notes.
+For more information, check [Vercel-deployed-frontend/README.md](Vercel-deployed-frontend/README.md) for the frontend walkthrough and deployment notes.
 
-4. Backend structure and deployment notes:
+5. Backend structure and deployment notes:
 
-   For more information, check [AWS-deployed-backend/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/AWS-deployed-backend/README.md>) for the backend entrypoints, AWS-facing structure, and runtime layout.
+For more information, check [AWS-deployed-backend/README.md](AWS-deployed-backend/README.md) for the backend entrypoints, AWS-facing structure, and runtime layout.
 
 ## Why This Approach Was Chosen
 
@@ -84,7 +79,7 @@ That gives a strong balance of quality and control:
 - lower operational cost than calling a model for every question
 - easier testing and clearer failure behavior
 
-For more information on the decision-making behind the project, check [Project-explained/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/Project-explained/README.md>).
+For more information on the decision-making behind the project, check [Project-explained/README.md](Project-explained/README.md).
 
 ## How Our Matching Works
 
@@ -98,7 +93,7 @@ The matching flow is intentionally simple:
 4. Apply confidence rules so weak or ambiguous matches are rejected.
 5. Fall back to a lexical matcher if the embedding path is unavailable.
 
-For more information on the runtime code behind this flow, check [AWS-deployed-backend/app/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/AWS-deployed-backend/app/README.md>). For the broader project explanation, check [Project-explained/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/Project-explained/README.md>).
+For more information on the runtime code behind this flow, check [AWS-deployed-backend/app/README.md](AWS-deployed-backend/app/README.md). For the broader project explanation, check [Project-explained/README.md](Project-explained/README.md).
 
 ## Trade-Offs
 
@@ -112,7 +107,7 @@ For more information on the runtime code behind this flow, check [AWS-deployed-b
 
 For this project, semantic matching is the best fit because it handles paraphrased questions well without paying the cost and hallucination risk of an LLM-first design.
 
-For more information on the longer reasoning behind these trade-offs, check [Project-explained/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/Project-explained/README.md>).
+For more information on the longer reasoning behind these trade-offs, check [Project-explained/README.md](Project-explained/README.md).
 
 ## What's Next For Scale
 
@@ -127,4 +122,4 @@ After that, the scaling path is:
 3. add deployment and environment separation across dev, preview, and production
 4. use LLM routing only where retrieval alone is not enough
 
-For more information on backend evolution, check [AWS-deployed-backend/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/AWS-deployed-backend/README.md>). For frontend delivery details, check [Vercel-deployed-frontend/README.md](<C:/Users/sossi/OneDrive/Desktop/agent builder workspace/Riverside Chatbot solution/Vercel-deployed-frontend/README.md>).
+For more information on backend evolution, check [AWS-deployed-backend/README.md](AWS-deployed-backend/README.md). For frontend delivery details, check [Vercel-deployed-frontend/README.md](Vercel-deployed-frontend/README.md).
