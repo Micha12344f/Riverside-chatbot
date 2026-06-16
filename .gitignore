@@ -1,3 +1,5 @@
 __pycache__/
 *.pyc
 *.pyo
+AWS-deployed-backend/lambda-release.zip
+AWS-deployed-backend/package/

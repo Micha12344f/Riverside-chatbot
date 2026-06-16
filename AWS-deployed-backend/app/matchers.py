@@ -6,7 +6,12 @@ from dataclasses import replace
 from difflib import SequenceMatcher
 from typing import Any, Callable
 
-import numpy as np
+try:
+    import numpy as np
+    _HAS_NUMPY = True
+except ImportError:
+    np = None  # type: ignore
+    _HAS_NUMPY = False
 
 from .models import FAQ, MatchCandidate, MatchResult
 

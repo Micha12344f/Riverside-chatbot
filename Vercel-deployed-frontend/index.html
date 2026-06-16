@@ -16816,6 +16816,19 @@
             color: #5f4730;
             font-style: italic;
         }
+        .chat-history .chat-message.typing {
+            align-self: flex-start;
+            text-align: left;
+            margin-left: 0;
+            margin-right: auto;
+            color: #8b6b45;
+            font-style: italic;
+            animation: typingPulse 1.2s ease-in-out infinite;
+        }
+        @keyframes typingPulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1.0; }
+        }
         .parchment-content .chat-input {
             display: flex;
             padding: 12px 0;
@@ -16935,6 +16948,8 @@
             const sendBtn = document.getElementById('chatbot-send');
             const chatHistory = document.querySelector('.chat-history');
             
+            const API_URL = 'https://dqcxdduwwj.execute-api.us-east-1.amazonaws.com/chat';
+            
             function addMessage(text, isUser) {
                 const msg = document.createElement('div');
                 msg.className = 'chat-message ' + (isUser ? 'user' : 'bot');
@@ -16943,15 +16958,46 @@
                 chatHistory.scrollTop = chatHistory.scrollHeight;
             }
             
-            function handleSend() {
+            function showTyping() {
+                const typing = document.createElement('div');
+                typing.className = 'chat-message bot typing';
+                typing.textContent = '...';
+                typing.id = 'typing-indicator';
+                chatHistory.appendChild(typing);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+            
+            function removeTyping() {
+                const typing = document.getElementById('typing-indicator');
+                if (typing) typing.remove();
+            }
+            
+            async function handleSend() {
                 const text = input.value.trim();
                 if (!text) return;
                 addMessage(text, true);
                 input.value = '';
-                // Simulate bot response
-                setTimeout(() => {
-                    addMessage("Thank you for your message! Our team will get back to you shortly.", false);
-                }, 1000);
+                input.disabled = true;
+                sendBtn.disabled = true;
+                showTyping();
+                
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: text })
+                    });
+                    const data = await response.json();
+                    removeTyping();
+                    addMessage(data.answer, false);
+                } catch (err) {
+                    removeTyping();
+                    addMessage("Sorry, I'm having trouble connecting. Please try again.", false);
+                } finally {
+                    input.disabled = false;
+                    sendBtn.disabled = false;
+                    input.focus();
+                }
             }
             
             trigger.addEventListener('click', function(e) {

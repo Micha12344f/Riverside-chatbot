@@ -32,24 +32,36 @@ cd Riverside-books-CLI
 
 3. Install dependencies and run the TUI.
 
-**Windows**
+**Windows:**
 
+4.
 ```powershell
 pip install -r requirements.txt
+```
+5.
+```
 python main.py
 ```
 
-**macOS**
+**macOS:**
 
+4.
 ```bash
 pip3 install -r requirements.txt
+```
+5.
+```
 python3 main.py
 ```
 
-**Linux**
+**Linux:**
 
+4.
 ```bash
 pip3 install -r requirements.txt
+```
+5.
+```
 python3 main.py
 ```
 
