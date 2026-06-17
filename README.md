@@ -1,86 +1,80 @@
 # Riverside Books Chatbot
 
-An AI-powered FAQ chatbot for a fictional independent bookshop, with a backend structured for AWS deployment and a frontend structured for Vercel.
+An AI-powered FAQ chatbot for a fictional independent bookshop, split into a static web frontend, an AWS-ready backend, a local CLI/TUI experience, and a set of project explainer materials.
 
-## CLI
+This `README.md` is the main hub for the repository. Every other README links back here and then fans out into one part of the project in more detail.
+
+## Repository map
+
+- [Vercel-deployed-frontend/README.md](Vercel-deployed-frontend/README.md): static storefront shell plus chatbot widget
+- [AWS-deployed-backend/README.md](AWS-deployed-backend/README.md): deployment-facing backend structure and API contract
+- [AWS-deployed-backend/app/README.md](AWS-deployed-backend/app/README.md): matcher and data-loading internals
+- [Riverside-books-CLI/README.md](Riverside-books-CLI/README.md): local CLI and Textual TUI experience
+- [Project-explained/README.md](Project-explained/README.md): analysis layer for decisions, notebooks, and tests
+- [Project-explained/Data and requirements/README.md](Project-explained/Data%20and%20requirements/README.md): dataset and dependency notes
+- [Project-explained/Notebooks/README.md](Project-explained/Notebooks/README.md): exploratory notebooks
+- [Project-explained/tests/README.md](Project-explained/tests/README.md): test coverage and test entrypoints
+- [assets/README.md](assets/README.md): media used by this root README
+
+## Demos
+
+### CLI
 
 <p align="center">
   <img src="assets/demo-cli.gif" alt="CLI demo" />
 </p>
 
-## Frontend website
+### Frontend website
 
-![Frontend demo](assets/demo-frontend.gif)
+<p align="center">
+  <img src="assets/demo-frontend.gif" alt="Frontend demo" />
+</p>
 
-## Get started
+[Source video](assets/demo-frontend.mp4)
 
-> **Note**
-> Start with the TUI for the quickest local run. The frontend is the web presentation layer, and the backend is structured separately for later AWS deployment.
+Live frontend: <https://riverside-chatbot-website.vercel.app>
+
+## Quick start
+
+Start with the CLI/TUI if you want the fastest local run. The frontend and AWS backend are documented separately because they have different runtime assumptions.
 
 1. Clone the repo:
 
 ```powershell
-git clone --branch main https://github.com/Micha12344f/Riverside-chatbot.git
+git clone --branch main https://github.com/Micha12344f/Riverside-books-chatbot.git
+cd Riverside-books-chatbot
 ```
 
-2. Move into the TUI folder:
+2. Run the local CLI/TUI:
 
 ```powershell
-cd Riverside-chatbot
 cd Riverside-books-CLI
-```
-
-3. Install dependencies and run the TUI.
-
-**Windows:**
-
-4.
-```powershell
 pip install -r requirements.txt
-```
-5.
-```
 python main.py
 ```
 
-**macOS:**
+3. Review the component docs as needed:
 
-4.
-```bash
-pip3 install -r requirements.txt
-```
-5.
-```
-python3 main.py
-```
+- frontend: [Vercel-deployed-frontend/README.md](Vercel-deployed-frontend/README.md)
+- backend: [AWS-deployed-backend/README.md](AWS-deployed-backend/README.md)
+- matcher internals: [AWS-deployed-backend/app/README.md](AWS-deployed-backend/app/README.md)
+- project explainer: [Project-explained/README.md](Project-explained/README.md)
 
-**Linux:**
+> **Note**
+> If `pip` is unavailable, install Python first:
+> - Windows: [python.org](https://www.python.org/downloads/) or `winget install Python.Python.3.11`
+> - macOS: `brew install python`
+> - Linux: `sudo apt install python3-pip`
 
-4.
-```bash
-pip3 install -r requirements.txt
-```
-5.
-```
-python3 main.py
-```
+## Security
 
-> **Note** — If `pip`/`pip3` isn't available, install Python first:
-> - Windows: [python.org installer](https://www.python.org/downloads/) or `winget install Python.Python.3.11`
-> - macOS: `brew install python` (also makes `pip3` and `python3` available)
-> - Linux: `sudo apt install python3-pip` (or your distro's package manager)
+- Frontend-to-backend traffic should go through the Vercel-side `/api/chat` proxy, with the upstream URL stored in the `RIVERSIDE_BACKEND_URL` Vercel environment variable.
+- The Lambda now expects origin-based CORS control through `ALLOWED_ORIGINS` instead of wildcard browser access.
+- Public docs in this repo use placeholders for deploy-time infrastructure values rather than live service identifiers.
 
-4. Frontend website:
+## Why this approach was chosen
 
-For more information, check [Vercel-deployed-frontend/README.md](Vercel-deployed-frontend/README.md) for the frontend walkthrough and deployment notes.
-
-5. Backend structure and deployment notes:
-
-For more information, check [AWS-deployed-backend/README.md](AWS-deployed-backend/README.md) for the backend entrypoints, AWS-facing structure, and runtime layout.
-
-## Why This Approach Was Chosen
-
-![Why this approach](assets/demo-why-this-approach.gif)
+![Why this approach](assets/demo-why-this-approach.png)
 
 This project uses semantic retrieval as the main matching strategy because the FAQ set is fixed, small, and best answered from grounded source content rather than free-form generation.
 
@@ -91,25 +85,23 @@ That gives a strong balance of quality and control:
 - lower operational cost than calling a model for every question
 - easier testing and clearer failure behavior
 
-For more information on the decision-making behind the project, check [Project-explained/README.md](Project-explained/README.md).
+For more detail, see [Project-explained/README.md](Project-explained/README.md).
 
-## How Our Matching Works
+## How matching works
 
-![Matching flow](assets/demo-matching-flow.gif)
+![Matching flow](assets/demo-matching-flow.png)
 
-The matching flow is intentionally simple:
+The runtime flow is intentionally simple:
 
-1. Load the FAQ data from the backend runtime assets.
-2. Turn each FAQ into a searchable text block using both question and answer text.
-3. Compare the user query against the FAQ set using semantic similarity.
-4. Apply confidence rules so weak or ambiguous matches are rejected.
+1. Load FAQ data from the runtime assets.
+2. Turn each FAQ into a searchable document that combines question and answer text.
+3. Compare the user query against the FAQ set with semantic similarity.
+4. Reject low-confidence or ambiguous matches.
 5. Fall back to a lexical matcher if the embedding path is unavailable.
 
-For more information on the runtime code behind this flow, check [AWS-deployed-backend/app/README.md](AWS-deployed-backend/app/README.md). For the broader project explanation, check [Project-explained/README.md](Project-explained/README.md).
+See [AWS-deployed-backend/app/README.md](AWS-deployed-backend/app/README.md) for the code-level explanation and [Project-explained/README.md](Project-explained/README.md) for the reasoning layer.
 
-## Trade-Offs
-
-![Trade-offs visual](assets/demo-tradeoffs.gif)
+## Trade-offs
 
 | Approach | Accuracy | Latency | Cost | Hallucination |
 | --- | --- | --- | --- | --- |
@@ -119,19 +111,17 @@ For more information on the runtime code behind this flow, check [AWS-deployed-b
 
 For this project, semantic matching is the best fit because it handles paraphrased questions well without paying the cost and hallucination risk of an LLM-first design.
 
-For more information on the longer reasoning behind these trade-offs, check [Project-explained/README.md](Project-explained/README.md).
+## What comes next for scale
 
-## What's Next For Scale
+![Scale path](assets/demo-scale-path.png)
 
-![Scale path](assets/demo-scale-path.gif)
+The next step after the current demo architecture is a cleaner HTTP contract between frontend and backend, followed by better environment separation and observability.
 
-The next step is to expose the backend as an AWS-hosted API that the Vercel frontend can call directly.
+That path looks like this:
 
-After that, the scaling path is:
-
-1. add a clean HTTP API layer in the backend
-2. introduce better evaluation and monitoring
-3. add deployment and environment separation across dev, preview, and production
+1. keep the frontend proxy and backend URL separated by environment
+2. narrow CORS and deployment settings per environment
+3. add better evaluation and monitoring
 4. use LLM routing only where retrieval alone is not enough
 
-For more information on backend evolution, check [AWS-deployed-backend/README.md](AWS-deployed-backend/README.md). For frontend delivery details, check [Vercel-deployed-frontend/README.md](Vercel-deployed-frontend/README.md).
+For more detail, see [AWS-deployed-backend/README.md](AWS-deployed-backend/README.md), [Vercel-deployed-frontend/README.md](Vercel-deployed-frontend/README.md), and [Project-explained/README.md](Project-explained/README.md).

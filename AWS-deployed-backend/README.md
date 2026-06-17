@@ -1,147 +1,123 @@
-# AWS Backend Deployment
+# AWS Backend
 
-Riverside Books FAQ chatbot — deployed as **AWS Lambda + API Gateway HTTP API**.
+Back to the main hub: [../README.md](../README.md)
+
+This folder contains the AWS-facing backend structure for the Riverside Books chatbot. The production shape is an AWS Lambda behind API Gateway.
+
+## What lives here
+
+```
+AWS-deployed-backend/
+├── lambda_handler.py   # HTTP entry point for API Gateway
+├── main.py             # local CLI-style smoke entry point
+├── app/                # matcher, data-loading, and runtime logic
+├── package/            # generated deployment bundle workspace
+└── README.md
+```
+
+See the runtime internals in [app/README.md](app/README.md).
 
 ## Architecture
 
 ```
-User Browser (Vercel frontend)
-        │
-        │ POST /chat {"query": "..."}
-        ▼
-API Gateway HTTP API (dqcxdduwwj)
-  https://dqcxdduwwj.execute-api.us-east-1.amazonaws.com/chat
-        │
-        │ Lambda proxy integration (v2 payload)
-        ▼
-Lambda: riverside-chatbot
-  Python 3.11 | 256 MB | 30 s timeout
-  Handler: lambda_handler.lambda_handler
-        │
-        │ LexicalMatcher (token overlap + fuzzy string matching)
-        ▼
-Response: {"answer": "...", "matched": true|false}
+Browser or client
+    -> POST /chat {"query": "..."}
+API Gateway HTTP API
+    -> Lambda proxy integration
+Lambda handler
+    -> LexicalMatcher against FAQ runtime assets
+JSON response
+    -> {"answer": "...", "matched": true|false}
 ```
 
-## Live Resources
+The Lambda uses the lightweight lexical matcher rather than the semantic matcher so the deployable bundle stays small and does not require heavyweight ML dependencies.
 
-| Resource | ID / ARN | Console Link |
-|----------|----------|-------------|
-| **Lambda** | `riverside-chatbot` | [Lambda console](https://us-east-1.console.aws.amazon.com/lambda/home?region=us-east-1#/functions/riverside-chatbot) |
-| **API Gateway** | `dqcxdduwwj` | [API Gateway console](https://us-east-1.console.aws.amazon.com/apigateway/main/apis/dqcxdduwwj?region=us-east-1) |
-| **Invoke URL** | `https://dqcxdduwwj.execute-api.us-east-1.amazonaws.com/chat` | — |
-| **IAM Role (Lambda)** | `riverside-lambda-exec` | [IAM console](https://us-east-1.console.aws.amazon.com/iam/home?region=us-east-1#/roles/riverside-lambda-exec) |
-| **IAM Role (GitHub)** | `github-riverside-chatbot-deploy` | [IAM console](https://us-east-1.console.aws.amazon.com/iam/home?region=us-east-1#/roles/github-riverside-chatbot-deploy) |
-| **S3 Artifacts** | `riverside-chatbot-artifacts-459100131320` | [S3 console](https://s3.console.aws.amazon.com/s3/buckets/riverside-chatbot-artifacts-459100131320?region=us-east-1) |
-| **CloudWatch Logs** | `/aws/lambda/riverside-chatbot` | [Logs console](https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-groups/log-group/$252Faws$252Flambda$252Friverside-chatbot) |
-
-## API Reference
+## API contract
 
 ### `POST /chat`
 
-**Request:**
+Request:
+
 ```json
 {"query": "What are your opening hours?"}
 ```
 
-**Response (matched):**
+Matched response:
+
 ```json
 {"answer": "We're open 9am to 6pm Monday to Saturday, and 11am to 4pm on Sundays.", "matched": true}
 ```
 
-**Response (no match):**
+Fallback response:
+
 ```json
 {"answer": "Sorry, I don't know that one — please ask a member of staff.", "matched": false}
 ```
 
-**Response (empty query):**
+Empty-query response:
+
 ```json
-HTTP 400
 {"answer": "Please ask a question.", "matched": false}
 ```
 
-CORS headers are included on all responses (`Access-Control-Allow-Origin: *`).
+## Security
 
-## Directory Layout
+- Frontend requests should arrive through the Vercel-side `/api/chat` proxy.
+- Store the upstream API URL in the Vercel environment variable `RIVERSIDE_BACKEND_URL`.
+- Control browser access to Lambda with the `ALLOWED_ORIGINS` environment variable.
+- Keep deploy-time values such as API IDs, account IDs, ARNs, bucket names, and console links out of public docs.
 
-```
-AWS-deployed-backend/
-├── lambda_handler.py      # Lambda entry point (HTTP API v2 handler)
-├── main.py                # CLI entry point (for local dev / smoke tests)
-├── app/
-│   ├── __init__.py        # Public API surface
-│   ├── chatbot.py         # CLI loop + matcher orchestration
-│   ├── data.py            # FAQ loader (JSON → FAQ dataclasses)
-│   ├── matchers.py        # LexicalMatcher, SemanticMatcher, LlmMatcher
-│   ├── models.py          # FAQ, MatchCandidate, MatchResult dataclasses
-│   ├── requirements.txt   # numpy, sentence-transformers, pytest
-│   └── runtime_assets/
-│       └── faqs.json      # FAQ knowledge base (6 entries)
-└── README.md
-```
+## Deployment workflow
 
-## Matcher Strategy
+The repository already includes a GitHub Actions workflow at [../.github/workflows/deploy-backend-aws.yml](../.github/workflows/deploy-backend-aws.yml).
 
-The Lambda uses **LexicalMatcher** — a pure-Python token-overlap matcher with fuzzy string comparison. It requires no ML dependencies, keeping the Lambda zip under 8 KB.
+At a high level it:
 
-| Matcher | Dependencies | Lambda Size | Used In |
-|---------|-------------|-------------|---------|
-| `LexicalMatcher` | stdlib only | ~8 KB | **Lambda (production)** |
-| `SemanticMatcher` | numpy, sentence-transformers, PyTorch | ~2.9 GB | CLI / local dev |
-| `LlmMatcher` | not implemented | — | Future scaling path |
+1. packages `main.py` and `app/`
+2. uploads the bundle as a workflow artifact
+3. assumes an AWS role through GitHub OIDC
+4. uploads the bundle to an S3 artifact location
 
-The `numpy` import in `matchers.py` is guarded with a `try/except ImportError` so the module loads cleanly in Lambda without numpy installed.
+### Secret names used by the workflow
 
-## GitHub Actions Workflow
+- `AWS_ROLE_ARN`
+- `AWS_BACKEND_ARTIFACT_BUCKET`
+- `ALLOWED_ORIGINS`
 
-`.github/workflows/deploy-backend-aws.yml`:
+## Local testing
 
-1. **package-backend** — Installs deps, bundles `main.py` + `app/` into `backend-release.zip`, uploads as artifact
-2. **publish-bundle-to-aws** — Downloads artifact, assumes IAM role via GitHub OIDC, uploads zip to S3
-
-Triggered on pushes to `main` touching `AWS-deployed-backend/**` or the workflow file itself.
-
-### Required GitHub Secrets
-
-| Secret | Value | Purpose |
-|--------|-------|---------|
-| `AWS_ROLE_ARN` | `arn:aws:iam::459100131320:role/github-riverside-chatbot-deploy` | OIDC role assumption |
-| `AWS_BACKEND_ARTIFACT_BUCKET` | `riverside-chatbot-artifacts-459100131320` | S3 upload target |
-| `VERCEL_TOKEN` | (set) | Vercel frontend deploy |
-
-## Testing
+Use a placeholder or environment-provided backend URL when documenting commands:
 
 ### cURL
+
 ```bash
-curl -X POST https://dqcxdduwwj.execute-api.us-east-1.amazonaws.com/chat \
+export RIVERSIDE_API_URL="https://<api-id>.execute-api.<region>.amazonaws.com/chat"
+curl -X POST "$RIVERSIDE_API_URL" \
   -H "Content-Type: application/json" \
   -d '{"query":"Where are you located?"}'
 ```
 
 ### PowerShell
+
 ```powershell
+$env:RIVERSIDE_API_URL = "https://<api-id>.execute-api.<region>.amazonaws.com/chat"
 $body = '{"query":"Do you host events?"}'
-Invoke-RestMethod -Uri "https://dqcxdduwwj.execute-api.us-east-1.amazonaws.com/chat" `
+Invoke-RestMethod -Uri $env:RIVERSIDE_API_URL `
   -Method POST -Body $body -ContentType "application/json"
 ```
 
-### AWS Console
-1. Open [Lambda console](https://us-east-1.console.aws.amazon.com/lambda/home?region=us-east-1#/functions/riverside-chatbot)
-2. Click **Test** tab
-3. Create event with body: `{"body": "{\"query\":\"What are your opening hours?\"}"}`
-4. Click **Test**
+### Local frontend smoke test
 
-### Local Frontend
 ```powershell
-cd Vercel-deployed-frontend
+cd ..\Vercel-deployed-frontend
 python -m http.server 3000
-# Open http://localhost:3000/index.html
-# Click golden chatbot button (bottom-right)
 ```
 
-## Updating the Lambda
+For production website traffic, prefer the Vercel proxy route rather than calling the API Gateway URL directly from browser code.
 
-After changing `lambda_handler.py` or `app/`:
+## Updating the Lambda bundle manually
+
+If you need a local packaging pass:
 
 ```powershell
 cd AWS-deployed-backend
@@ -151,19 +127,18 @@ Copy-Item lambda_handler.py package/
 Copy-Item -Recurse app package/app
 Remove-Item -Recurse package/app/__pycache__ -ErrorAction SilentlyContinue
 Compress-Archive -Path package\* -DestinationPath lambda-release.zip -Force
-
-aws lambda update-function-code `
-  --function-name riverside-chatbot `
-  --zip-file "fileb://lambda-release.zip"
 ```
 
-## IAM Setup Summary
+The generated `package/` directory and `lambda-release.zip` are build artifacts, not source-of-truth docs or code.
 
-| Role | Trust | Permissions |
-|------|-------|-------------|
-| `riverside-lambda-exec` | `lambda.amazonaws.com` | `AWSLambdaBasicExecutionRole` (CloudWatch logs) |
-| `github-riverside-chatbot-deploy` | GitHub OIDC (`repo:Micha12344f/Riverside-books-chatbot:*`) | `s3:PutObject`, `s3:GetObject`, `s3:ListBucket` on artifact bucket |
+## FAQ knowledge base
 
-## FAQ Knowledge Base
+The runtime FAQ data lives in `app/runtime_assets/faqs.json`.
 
-6 entries covering: opening hours, location, gift wrapping, book ordering, second-hand books, and events. Stored in `app/runtime_assets/faqs.json`. To add more FAQs, edit that file and redeploy the Lambda.
+To add or change answers:
+
+1. edit the FAQ JSON
+2. verify behavior locally
+3. redeploy the backend bundle
+
+For the data and matcher details, continue to [app/README.md](app/README.md) and [../Project-explained/README.md](../Project-explained/README.md).
