@@ -48,14 +48,10 @@ git clone --branch main https://github.com/Micha12344f/Riverside-chatbot.git
 
 ```powershell
 cd Riverside-chatbot
-```
-OR CLI:
-
-```
 cd Riverside-books-CLI
 ```
 
-3. Install dependencies and run the TUI.
+Install dependencies and run the TUI.
 
 **Windows:**
 
