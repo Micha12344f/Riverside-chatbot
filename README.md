@@ -40,19 +40,56 @@ Start with the CLI/TUI if you want the fastest local run. The frontend and AWS b
 
 1. Clone the repo:
 
+   **Windows:**
 ```powershell
-git clone --branch main https://github.com/Micha12344f/Riverside-books-chatbot.git
-cd Riverside-books-chatbot
+git clone --branch main https://github.com/Micha12344f/Riverside-chatbot.git
 ```
 
-2. Run the local CLI/TUI:
+2. Move into the TUI folder:
 
 ```powershell
+cd Riverside-chatbot
+```
+OR CLI:
+
+```
 cd Riverside-books-CLI
+```
+
+3. Install dependencies and run the TUI.
+
+**Windows:**
+
+4.
+```powershell
 pip install -r requirements.txt
+```
+5.
+```
 python main.py
 ```
 
+**macOS**
+
+4.
+```bash
+pip3 install -r requirements.txt
+```
+5.
+```
+python3 main.py
+```
+
+**Linux**
+
+4.
+```bash
+pip3 install -r requirements.txt
+```
+5.
+```
+python3 main.py
+```
 3. Review the component docs as needed:
 
 - frontend: [Vercel-deployed-frontend/README.md](Vercel-deployed-frontend/README.md)
