@@ -85,7 +85,7 @@ pip3 install -r requirements.txt
 ```
 python3 main.py
 ```
-3. Review the component docs as needed:
+Review the component docs as needed:
 
 - frontend: [Vercel-deployed-frontend/README.md](Vercel-deployed-frontend/README.md)
 - backend: [AWS-deployed-backend/README.md](AWS-deployed-backend/README.md)
